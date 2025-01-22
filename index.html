@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="気象情報BOT(beta)は気象庁のXMLデータを活用し、日本全国のリアルタイムな気象情報を提供します。濃霧や大雨などの注意報・警報を迅速にお知らせします。">
+    <meta name="keywords" content="気象情報, 気象庁, 天気予報, 注意報, 警報, リアルタイム, 気象データ, bluesky, 情報BOT">
+    <meta name="author" content="気象情報BOT(beta)">
+    <title>気象情報BOT(beta) | リアルタイム天気情報</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background: linear-gradient(90deg, #005A9E, #0078D7);
+            color: #fff;
+            padding: 1.5rem 0;
+            text-align: center;
+            position: relative;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        header p {
+            font-size: 1.2rem;
+        }
+        .menu-icon {
+            display: none;
+            font-size: 2rem;
+            cursor: pointer;
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background: #004477;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: bold;
+            padding: 1rem;
+            transition: background 0.3s;
+        }
+        nav a:hover {
+            background: #003366;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        section {
+            margin-bottom: 2rem;
+        }
+        h2 {
+            border-bottom: 3px solid #0078D7;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            background: #005A9E;
+            color: #fff;
+            margin-top: 2rem;
+        }
+        .highlight {
+            background-color: #fffae6;
+            padding: 1rem;
+            border-left: 5px solid #ffc107;
+            border-radius: 5px;
+        }
+        .weather-update {
+            background-color: #eef6ff;
+            padding: 1rem;
+            border-left: 5px solid #0078D7;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .weather-update h3 {
+            margin-top: 0;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .menu-icon {
+                display: block;
+            }
+            nav {
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+                position: absolute;
+                top: 5rem;
+                left: 0;
+                background: #004477;
+                z-index: 1000;
+            }
+            nav a {
+                margin: 0;
+                padding: 1rem;
+                width: 100%;
+                text-align: center;
+                border-top: 1px solid #003366;
+            }
+            nav a:first-child {
+                border-top: none;
+            }
+        }
+        nav.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>気象情報BOT(beta)</h1>
+        <p>気象庁のXMLデータを利用した自動気象情報提供サービス</p>
+        <div class="menu-icon" onclick="toggleMenu()">☰</div>
+    </header>
+
+    <nav id="nav-links">
+        <a href="#about">概要</a>
+        <a href="#features">特徴</a>
+        <a href="#latest">最新情報</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">連絡先</a>
+    </nav>
+
+    <div class="container">
+        <section id="about">
+            <h2>概要</h2>
+            <p>このBOTは気象庁XMLから気象情報を取得し、Twitterや他のプラットフォームで情報を提供します。開発中のため、情報が遅れる場合があります。</p>
+            <p class="highlight">⚠️ 気象庁のウェブサイトは合法的にスクレイピングされています。</p>
+        </section>
+
+        <section id="features">
+            <h2>特徴</h2>
+            <ul>
+                <li>リアルタイムで気象情報を取得</li>
+                <li>注意報・警報の迅速な通知</li>
+                <li>Twitterとの連携</li>
+                <li>シンプルで使いやすいデザイン</li>
+                <li>日本全国をカバー</li>
+            </ul>
+        </section>
+
+        <section id="latest">
+            <h2>提供する情報例</h2>
+            <p>提供例をこちらに表示します。</p>
+            <div id="weather-updates" class="weather-update">
+                <h3>【気象警報・注意報（Ｈ２７）】</h3>
+                <p><strong>発表日時:</strong> 2025-01-21T23:08:50Z</p>
+                <p><strong>状況:</strong> 熊本県では、２２日昼前まで濃霧による視程障害に注意してください。</p>
+                <p><strong>対象地域:</strong></p>
+                <ul>
+                    <li>熊本県／熊本地方／阿蘇地方／天草・芦北地方／球磨地方</li>
+                    <li>熊本市／山鹿菊池／荒尾玉名／上益城／宇城八代</li>
+                    <li>その他の市町村: 荒尾市／水俣市／玉名市／山鹿市／菊池市など</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="faq">
+            <h2>よくある質問 (FAQ)</h2>
+            <dl>
+                <dt>このBOTはどのように動作しますか？</dt>
+                <dd>気象庁の公開データを使用して気象情報を収集し、ユーザーに通知します。</dd>
+                <dt>情報の更新頻度はどのくらいですか？</dt>
+                <dd>約10分ごとに最新情報を取得します。</dd>
+                <dt>どの地域の情報を提供していますか？</dt>
+              <dd>全国の情報をお知らせします。</dd>
+            </dl>
+        </section>
+
+        <section id="contact">
+            <h2>連絡先</h2>
+            <p>お問い合わせ: <a href="https://bsky.app/profile/did:plc:qc2pd6iprvp2krtfvnonlty7">作者のbluesky</a></p>
+            <p>bluesky: <a href="https://bsky.app/profile/kishou.f5.si">@kishou.f5.si</a></p>
+            <p>免責事項: 本サイトで提供される情報は、公式発表と異なる場合があります。</p>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 気象情報BOT(beta). All rights reserved. | <a href="#">プライバシーポリシー</a> | <a href="#">利用規約</a></p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('nav-links');
+            navLinks.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
