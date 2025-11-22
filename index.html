@@ -1,208 +1,602 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="気象情報BOT(beta)は気象庁のXMLデータを活用し、日本全国のリアルタイムな気象情報を提供します。濃霧や大雨などの注意報・警報を迅速にお知らせします。">
-    <meta name="keywords" content="気象情報, 気象庁, 天気予報, 注意報, 警報, リアルタイム, 気象データ, bluesky, 情報BOT">
-    <meta name="author" content="気象情報BOT(beta)">
-    <title>気象情報BOT(beta) | リアルタイム天気情報</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    
+    <!-- ==========================================
+         SEO & Metadata (SEO対策強化)
+    =========================================== -->
+    <title>Kishou.f5.si | 気象庁XML自動配信BOT - 防災・地震速報をBlueskyへ</title>
+    <meta name="description" content="気象庁防災情報XML(JMA XML)を24時間リアルタイムで解析し、Blueskyへ自動配信する個人開発BOT。警報、注意報、地震速報を最速でタイムラインにお届けします。">
+    <meta name="keywords" content="気象情報, Bluesky, BOT, 気象庁XML, JMA, 防災情報, 地震速報, 自動配信, kishou.f5.si">
+    <meta name="author" content="kishou.f5.si">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://kishou.f5.si/">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kishou.f5.si/">
+    <meta property="og:title" content="Kishou.f5.si - 気象情報自動配信BOT">
+    <meta property="og:description" content="気象データを、秒速であなたへ。気象庁XML連携の24時間稼働BOTシステム。">
+    <meta property="og:image" content="https://kishou.f5.si/ogp.png"> <!-- ※実際の画像URLに変更推奨 -->
+    <meta property="og:site_name" content="Kishou.f5.si">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@kishou.f5.si">
+
+    <!-- 構造化データ (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Kishou.f5.si Bot",
+      "operatingSystem": "Cloud",
+      "applicationCategory": "UtilityApplication",
+      "description": "Automated weather information bot for Bluesky social network.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "kishou.f5.si Developer"
+      }
+    }
+    </script>
+
+    <!-- Tailwind CSS & Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'scan': 'scan 3s linear infinite',
+                        'shimmer': 'shimmer 2s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        scan: {
+                            '0%': { top: '-10%', opacity: '0' },
+                            '10%': { opacity: '1' },
+                            '90%': { opacity: '1' },
+                            '100%': { top: '110%', opacity: '0' },
+                        },
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
+        /* Custom Styles */
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
+            background-color: #f8fafc;
+            color: #0f172a;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
-        header {
-            background: linear-gradient(90deg, #005A9E, #0078D7);
-            color: #fff;
-            padding: 1.5rem 0;
-            text-align: center;
-            position: relative;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2.5rem;
-        }
-        header p {
-            font-size: 1.2rem;
-        }
-        .menu-icon {
-            display: none;
-            font-size: 2rem;
-            cursor: pointer;
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-        }
-        nav {
-            display: flex;
-            justify-content: center;
-            background: #004477;
-        }
-        nav a {
-            color: #fff;
-            text-decoration: none;
-            margin: 0 1rem;
-            font-weight: bold;
-            padding: 1rem;
-            transition: background 0.3s;
-        }
-        nav a:hover {
-            background: #003366;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: #fff;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        section {
-            margin-bottom: 2rem;
-        }
-        h2 {
-            border-bottom: 3px solid #0078D7;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        footer {
-            text-align: center;
-            padding: 1.5rem 0;
-            background: #005A9E;
-            color: #fff;
-            margin-top: 2rem;
-        }
-        .highlight {
-            background-color: #fffae6;
-            padding: 1rem;
-            border-left: 5px solid #ffc107;
-            border-radius: 5px;
-        }
-        .weather-update {
-            background-color: #eef6ff;
-            padding: 1rem;
-            border-left: 5px solid #0078D7;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-        }
-        .weather-update h3 {
-            margin-top: 0;
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
         }
 
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .menu-icon {
-                display: block;
-            }
-            nav {
-                display: none;
-                flex-direction: column;
-                align-items: center;
-                width: 100%;
-                position: absolute;
-                top: 5rem;
-                left: 0;
-                background: #004477;
-                z-index: 1000;
-            }
-            nav a {
-                margin: 0;
-                padding: 1rem;
-                width: 100%;
-                text-align: center;
-                border-top: 1px solid #003366;
-            }
-            nav a:first-child {
-                border-top: none;
-            }
+        .map-path {
+            fill: #e2e8f0;
+            stroke: #fff;
+            stroke-width: 1;
+            transition: all 0.3s ease;
         }
-        nav.active {
-            display: flex;
+        .map-path:hover, .map-path.active {
+            fill: #38bdf8;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #0ea5e9, transparent);
+            box-shadow: 0 0 15px #0ea5e9;
+            opacity: 0.8;
+        }
+
+        /* Scroll Reveal Class */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Mobile Sticky Button Safe Area */
+        .safe-pb {
+            padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
         }
     </style>
 </head>
-<body>
-    <header>
-        <h1>気象情報BOT(beta)</h1>
-        <p>気象庁のXMLデータを利用した自動気象情報提供サービス</p>
-        <div class="menu-icon" onclick="toggleMenu()">☰</div>
-    </header>
+<body class="antialiased relative safe-pb">
 
-    <nav id="nav-links">
-        <a href="#about">概要</a>
-        <a href="#features">特徴</a>
-        <a href="#latest">最新情報</a>
-        <a href="#faq">FAQ</a>
-        <a href="#contact">連絡先</a>
+    <!-- Interactive Canvas Background -->
+    <canvas id="particle-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 sm:gap-3 group cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-blue-400 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div class="relative bg-white/90 backdrop-blur border border-blue-100 p-1.5 sm:p-2 rounded-lg text-blue-600">
+                            <i data-lucide="cloud-lightning" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg sm:text-xl tracking-tight text-slate-800">KISHOU<span class="text-blue-500">.F5.SI</span></span>
+                        <p class="hidden sm:block text-[10px] text-slate-400 font-mono tracking-widest uppercase">JMA XML AUTO-BOT</p>
+                    </div>
+                </div>
+
+                <!-- Actions (Desktop) -->
+                <div class="flex items-center gap-4">
+                    <div class="hidden lg:flex flex-col items-end text-xs font-mono text-slate-500 mr-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                            <span>SYSTEM ONLINE</span>
+                        </div>
+                        <span id="uptime-counter">UPTIME: 24h 00m 00s</span>
+                    </div>
+                    <!-- PC用フォローボタン -->
+                    <a href="https://bsky.app/profile/kishou.f5.si" target="_blank" class="hidden sm:inline-flex relative group">
+                        <div class="absolute transition-all duration-1000 opacity-70 -inset-px bg-gradient-to-r from-[#44BCFF] via-[#FF44EC] to-[#FF675E] rounded-lg blur-md group-hover:opacity-100 group-hover:-inset-1 group-hover:duration-200 animate-tilt"></div>
+                        <button class="relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 bg-slate-900 font-pj rounded-lg focus:outline-none hover:bg-slate-800">
+                            <i data-lucide="at-sign" class="w-4 h-4 mr-2"></i>
+                            Follow
+                        </button>
+                    </a>
+                    <!-- Mobile用シンプルボタン -->
+                    <a href="https://bsky.app/profile/kishou.f5.si" target="_blank" class="sm:hidden bg-slate-900 text-white p-2 rounded-lg">
+                        <i data-lucide="at-sign" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </nav>
 
-    <div class="container">
-        <section id="about">
-            <h2>概要</h2>
-            <p>このBOTは気象庁XMLから気象情報を取得し、Twitterや他のプラットフォームで情報を提供します。開発中のため、情報が遅れる場合があります。</p>
-            <p class="highlight">⚠️ 気象庁のウェブサイトは合法的にスクレイピングされています。</p>
-        </section>
+    <!-- Hero Section -->
+    <header class="relative pt-28 pb-16 lg:pt-48 lg:pb-32 overflow-hidden z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                
+                <!-- Text Content -->
+                <div class="reveal active order-2 lg:order-1 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50/80 backdrop-blur border border-blue-100 text-blue-600 text-xs font-bold mb-6 tracking-wide shadow-sm">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        LIVE MONITORING
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-[1.15]">
+                        空のデータを、<br class="hidden sm:block">
+                        <span class="text-gradient">秒速であなたへ。</span>
+                    </h1>
+                    <p class="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                        気象庁XML(JMA XML)を24時間常時監視。<br class="sm:hidden">
+                        警報、注意報、地震速報を解析し、<br class="hidden sm:block">
+                        瞬時にBlueskyへ配信するBotシステム。
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <a href="https://bsky.app/profile/kishou.f5.si" class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="user-plus" class="w-5 h-5"></i>
+                            アカウントをフォロー
+                        </a>
+                        <a href="#monitor" class="w-full sm:w-auto px-8 py-4 bg-white/80 border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-white transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
+                            <i data-lucide="activity" class="w-5 h-5 text-blue-500"></i>
+                            稼働状況を見る
+                        </a>
+                    </div>
+                </div>
 
-        <section id="features">
-            <h2>特徴</h2>
-            <ul>
-                <li>リアルタイムで気象情報を取得</li>
-                <li>注意報・警報の迅速な通知</li>
-                <li>Twitterとの連携</li>
-                <li>シンプルで使いやすいデザイン</li>
-                <li>日本全国をカバー</li>
-            </ul>
-        </section>
+                <!-- Visual Monitor UI -->
+                <div class="relative reveal delay-200 order-1 lg:order-2 mb-8 lg:mb-0">
+                    <!-- Decor Blob -->
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+                    <div class="absolute bottom-0 right-0 w-64 h-64 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
-        <section id="latest">
-            <h2>提供する情報例</h2>
-            <p>提供例をこちらに表示します。</p>
-            <div id="weather-updates" class="weather-update">
-                <h3>【気象警報・注意報（Ｈ２７）】</h3>
-                <p><strong>発表日時:</strong> 2025-01-21T23:08:50Z</p>
-                <p><strong>状況:</strong> 熊本県では、２２日昼前まで濃霧による視程障害に注意してください。</p>
-                <p><strong>対象地域:</strong></p>
-                <ul>
-                    <li>熊本県／熊本地方／阿蘇地方／天草・芦北地方／球磨地方</li>
-                    <li>熊本市／山鹿菊池／荒尾玉名／上益城／宇城八代</li>
-                    <li>その他の市町村: 荒尾市／水俣市／玉名市／山鹿市／菊池市など</li>
-                </ul>
+                    <!-- Dashboard Interface -->
+                    <div class="glass-card rounded-2xl p-1 border border-white/60 shadow-2xl relative overflow-hidden group transform hover:scale-[1.01] transition-transform duration-500">
+                        
+                        <!-- UI Header -->
+                        <div class="bg-slate-50/90 border-b border-slate-200 p-3 flex justify-between items-center rounded-t-xl">
+                            <div class="flex gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                            </div>
+                            <div class="text-[10px] font-mono text-slate-400">dash.kishou.f5.si</div>
+                        </div>
+
+                        <!-- UI Body (Responsive Grid) -->
+                        <div class="bg-white/90 p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 h-[350px] sm:h-[400px]">
+                            <!-- Map Monitor -->
+                            <div class="col-span-1 sm:col-span-2 bg-slate-900 rounded-lg relative overflow-hidden p-4 flex items-center justify-center">
+                                <div class="scan-line animate-scan z-10"></div>
+                                
+                                <!-- SVG Map -->
+                                <svg id="japan-map" viewBox="0 0 1000 1000" class="w-full h-full max-h-[300px] filter drop-shadow-lg">
+                                    <path id="hokkaido" d="M700,100 L800,50 L850,150 L750,200 Z" class="map-path" />
+                                    <path id="tohoku" d="M720,210 L750,200 L700,400 L650,380 Z" class="map-path" />
+                                    <path id="kanto" d="M650,380 L700,400 L680,500 L620,480 Z" class="map-path" />
+                                    <path id="chubu" d="M600,400 L650,380 L620,480 L550,450 Z" class="map-path" />
+                                    <path id="kansai" d="M550,450 L500,500 L530,550 L580,500 Z" class="map-path" />
+                                    <path id="chugoku" d="M450,500 L550,450 L480,550 L400,520 Z" class="map-path" />
+                                    <path id="shikoku" d="M450,580 L530,560 L500,620 L430,600 Z" class="map-path" />
+                                    <path id="kyushu" d="M350,550 L400,520 L380,650 L300,600 Z" class="map-path" />
+                                </svg>
+                                
+                                <div class="absolute bottom-3 left-3 text-[10px] font-mono text-cyan-400 bg-slate-950/50 px-2 py-1 rounded border border-cyan-900/50 backdrop-blur-sm">
+                                    SCANNING: <span id="scanning-region" class="text-white">ALL</span>
+                                </div>
+                            </div>
+
+                            <!-- Log Terminal (Stacked on mobile) -->
+                            <div class="col-span-1 bg-slate-950 rounded-lg p-3 font-mono text-[10px] leading-relaxed overflow-hidden flex flex-col h-32 sm:h-auto">
+                                <div class="text-slate-500 border-b border-slate-800 pb-1.5 mb-2 flex justify-between items-center">
+                                    <span>SYSTEM LOG</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                        <span class="text-green-500">LIVE</span>
+                                    </div>
+                                </div>
+                                <div id="terminal-logs" class="flex-1 overflow-hidden flex flex-col justify-end gap-1 relative">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none"></div>
+                                    <!-- Logs will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
+    </header>
 
-        <section id="faq">
-            <h2>よくある質問 (FAQ)</h2>
-            <dl>
-                <dt>このBOTはどのように動作しますか？</dt>
-                <dd>気象庁の公開データを使用して気象情報を収集し、ユーザーに通知します。</dd>
-                <dt>情報の更新頻度はどのくらいですか？</dt>
-                <dd>約10分ごとに最新情報を取得します。</dd>
-                <dt>どの地域の情報を提供していますか？</dt>
-              <dd>全国の情報をお知らせします。</dd>
-            </dl>
-        </section>
+    <!-- Live Post Preview -->
+    <section class="py-16 sm:py-24 bg-slate-50/50 relative z-10 border-t border-slate-200" id="monitor">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-10 reveal">
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-900">Latest Delivery</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">実際のBlueskyへの投稿イメージ</p>
+            </div>
 
-        <section id="contact">
-            <h2>連絡先</h2>
-            <p>お問い合わせ: <a href="https://bsky.app/profile/did:plc:qc2pd6iprvp2krtfvnonlty7">作者のbluesky</a></p>
-            <p>bluesky: <a href="https://bsky.app/profile/kishou.f5.si">@kishou.f5.si</a></p>
-            <p>免責事項: 本サイトで提供される情報は、公式発表と異なる場合があります。</p>
-        </section>
-    </div>
+            <!-- Post Card -->
+            <div class="bg-white rounded-xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-100 reveal max-w-2xl mx-auto">
+                <div class="flex gap-3 sm:gap-4">
+                    <div class="flex-shrink-0">
+                         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-slate-100 to-blue-50 flex items-center justify-center text-blue-600 border border-slate-200">
+                             <i data-lucide="cloud-lightning" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                         </div>
+                    </div>
+                    <div class="flex-grow min-w-0"> <!-- min-w-0 for text truncate -->
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-1.5 sm:gap-2 overflow-hidden">
+                                <span class="font-bold text-slate-900 truncate">kishou.f5.si</span>
+                                <span class="text-slate-500 text-xs sm:text-sm truncate">@kishou.f5.si</span>
+                                <span class="text-slate-400 text-xs">· 1m</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-1 text-slate-800 leading-relaxed text-sm sm:text-base">
+                            <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] sm:text-xs font-bold rounded border border-red-100 flex items-center gap-1">
+                                    <i data-lucide="alert-circle" class="w-3 h-3"></i> 警報・注意報
+                                </span>
+                                <span class="text-[10px] sm:text-xs text-slate-400 font-mono">2025-11-22 01:03 JST</span>
+                            </div>
+                            <p class="font-bold mb-2">【広島県気象警報・注意報】</p>
+                            <p class="mb-4 text-slate-700">南部では、２３日まで空気の乾燥した状態が続くため、火の取り扱いに注意してください。</p>
+                            
+                            <!-- Data Visual Block -->
+                            <div class="grid gap-2 text-xs sm:text-sm">
+                                <div class="flex flex-col sm:flex-row sm:items-start bg-slate-50 p-2.5 rounded-lg border-l-4 border-slate-300 gap-1 sm:gap-3">
+                                    <div class="font-bold text-slate-500 flex-shrink-0 flex items-center gap-1">
+                                        <i data-lucide="cloud-off" class="w-3 h-3"></i> 濃霧注意報
+                                    </div>
+                                    <div class="text-slate-500">[解除] 北部／備北／芸北／三次市...</div>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-start bg-red-50 p-2.5 rounded-lg border-l-4 border-red-500 gap-1 sm:gap-3">
+                                    <div class="font-bold text-red-600 flex-shrink-0 flex items-center gap-1">
+                                        <i data-lucide="flame" class="w-3 h-3"></i> 乾燥注意報
+                                    </div>
+                                    <div class="text-slate-700">[継続] 南部／広島・呉／福山...</div>
+                                </div>
+                            </div>
+                        </div>
 
-    <footer>
-        <p>&copy; 2025 気象情報BOT(beta). All rights reserved. | <a href="#">プライバシーポリシー</a> | <a href="#">利用規約</a></p>
+                        <div class="flex gap-6 mt-4 text-slate-400">
+                            <button class="hover:text-blue-500 transition-colors flex items-center gap-1 text-xs"><i data-lucide="message-circle" class="w-4 h-4"></i> 0</button>
+                            <button class="hover:text-green-500 transition-colors flex items-center gap-1 text-xs"><i data-lucide="repeat" class="w-4 h-4"></i> 12</button>
+                            <button class="hover:text-red-500 transition-colors flex items-center gap-1 text-xs"><i data-lucide="heart" class="w-4 h-4"></i> 48</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <a href="https://bsky.app/profile/kishou.f5.si" target="_blank" class="text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center gap-1 group">
+                    もっと投稿を見る 
+                    <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="py-20 bg-white relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
+                <!-- Feature 1 -->
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors group reveal">
+                    <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 text-blue-600 group-hover:scale-110 transition-transform">
+                        <i data-lucide="database" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">気象庁XML連携</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        気象庁防災情報XMLフォーマット（JMA XML）を定期的に監視。公式ソースに基づいた正確なデータを取得しています。
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors group reveal delay-100">
+                    <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 text-blue-600 group-hover:scale-110 transition-transform">
+                        <i data-lucide="zap" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">24時間 自動配信</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        サーバーレスアーキテクチャにより、深夜帯の急変も見逃しません。情報の発表から投稿までのラグを最小限に抑えています。
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors group reveal delay-200">
+                    <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 text-blue-600 group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">最適化フォーマット</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        SNSのタイムラインで流し読みしても内容が把握できるよう、地域や警報の種類を整理してテキスト化しています。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-12 sm:py-16 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 items-start">
+            <div>
+                <div class="flex items-center gap-2 text-white font-bold text-xl mb-4">
+                    <i data-lucide="cloud-lightning" class="w-5 h-5 text-blue-500"></i>
+                    KISHOU.F5.SI
+                </div>
+                <p class="text-sm leading-relaxed max-w-md mb-6 text-slate-400">
+                    <span class="text-white font-semibold">個人開発による非公式プロジェクトです。</span><br>
+                    システムメンテナンスやAPI制限により、投稿が遅延または停止する場合があります。<br>
+                    生命・財産に関わる重要な判断は、必ず<a href="https://www.jma.go.jp/" class="underline hover:text-blue-400">気象庁公式サイト</a>をご確認ください。
+                </p>
+                <div class="flex gap-4">
+                    <a href="https://bsky.app/profile/kishou.f5.si" class="text-white hover:text-blue-400 transition-colors p-2 bg-slate-800 rounded-lg"><i data-lucide="at-sign" class="w-5 h-5"></i></a>
+                </div>
+            </div>
+            <div class="md:text-right">
+                 <p class="text-[10px] sm:text-xs text-slate-600 font-mono">
+                    SYSTEM STATUS: OPERATIONAL<br>
+                    REGION: TOKYO (AWS-AP-NORTHEAST-1)<br>
+                    LATENCY: 42ms<br><br>
+                    &copy; 2024-2025 kishou.f5.si<br>
+                    Powered by JMA XML
+                </p>
+            </div>
+        </div>
     </footer>
 
+    <!-- Mobile Sticky Footer CTA -->
+    <div class="fixed bottom-0 w-full bg-white/90 backdrop-blur border-t border-slate-200 p-3 z-50 sm:hidden safe-pb shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <a href="https://bsky.app/profile/kishou.f5.si" target="_blank" class="flex items-center justify-center w-full bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg active:scale-[0.98] transition-transform">
+            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+            Blueskyでフォローする
+        </a>
+    </div>
+
     <script>
-        function toggleMenu() {
-            const navLinks = document.getElementById('nav-links');
-            navLinks.classList.toggle('active');
+        // Initialize Icons
+        lucide.createIcons();
+
+        // 1. Lightweight Particle Background
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let width, height;
+
+        // Resize handling with debounce for performance
+        let resizeTimeout;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
         }
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resize, 200);
+        });
+        resize();
+
+        // Particle Class
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = Math.random() * 0.5 + 0.2; 
+                this.size = Math.random() * 2 + 0.5;
+                this.color = `rgba(14, 165, 233, ${Math.random() * 0.3})`;
+            }
+            update() {
+                this.y += this.vy;
+                this.x += this.vx;
+                if (this.y > height) this.y = 0;
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Determine particle count based on device width
+        const particleCount = window.innerWidth < 640 ? 30 : 80;
+        for(let i=0; i<particleCount; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // 2. Dashboard Logic
+        const regions = ['hokkaido', 'tohoku', 'kanto', 'chubu', 'kansai', 'chugoku', 'shikoku', 'kyushu'];
+        const terminalLogs = document.getElementById('terminal-logs');
+        const scanningRegion = document.getElementById('scanning-region');
+        const logMessages = [
+            { text: "XML Fetch: high_res_precipitation", color: "text-slate-400" },
+            { text: "Checking seismic trigger...", color: "text-blue-400" },
+            { text: "Status OK. Waiting for next poll.", color: "text-green-400" },
+            { text: "Heartbeat sent to Bluesky API.", color: "text-slate-500" },
+            { text: "Feed update: regular_01.xml", color: "text-yellow-500" }
+        ];
+
+        function addLog(msg) {
+            const div = document.createElement('div');
+            div.className = `${msg.color} transition-opacity duration-300`;
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            div.innerHTML = `<span class="opacity-50">[${time}]</span> ${msg.text}`;
+            terminalLogs.appendChild(div);
+            
+            // Mobile optimization: keep fewer logs
+            const maxLogs = window.innerWidth < 640 ? 4 : 8;
+            if (terminalLogs.children.length > maxLogs) terminalLogs.removeChild(terminalLogs.firstElementChild);
+            
+            // Auto scroll to bottom
+            terminalLogs.scrollTop = terminalLogs.scrollHeight;
+        }
+
+        // Simulation Loop
+        setInterval(() => {
+            document.querySelectorAll('.map-path').forEach(p => p.classList.remove('active'));
+            
+            if (Math.random() > 0.3) {
+                const randomRegion = regions[Math.floor(Math.random() * regions.length)];
+                const el = document.getElementById(randomRegion);
+                if(el) {
+                    el.classList.add('active');
+                    scanningRegion.innerText = randomRegion.toUpperCase();
+                    addLog({ 
+                        text: `Scan: ${randomRegion.toUpperCase()} Area`, 
+                        color: "text-cyan-500" 
+                    });
+                }
+            } else {
+                 addLog(logMessages[Math.floor(Math.random() * logMessages.length)]);
+            }
+        }, 2000);
+
+        // 3. Scroll Reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 4. Uptime Counter
+        let seconds = 0;
+        const uptimeEl = document.getElementById('uptime-counter');
+        setInterval(() => {
+            seconds++;
+            const h = Math.floor(seconds / 3600) + 24;
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            uptimeEl.innerText = `UPTIME: ${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+        }, 1000);
+
+        // Navbar Scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if(window.scrollY > 50) {
+                nav.classList.add('bg-white/90', 'backdrop-blur-md', 'shadow-sm');
+            } else {
+                nav.classList.remove('bg-white/90', 'backdrop-blur-md', 'shadow-sm');
+            }
+        });
+
     </script>
 </body>
 </html>
